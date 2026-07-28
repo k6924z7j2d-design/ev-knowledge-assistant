@@ -1,0 +1,177 @@
+# docker-compose.yml — Mac mini Application Node
+# See docs/Setup.md for full setup instructions.
+#
+# Prerequisites — create .env next to this file:
+#   OLLAMA_BASE_URL=http://<macbook-tailscale-ip>:11434
+#   WEBUI_SECRET_KEY=<random-secret>
+#
+# After the stack is up, wire MCP servers in Open Web UI → Settings → Tools:
+#   Filesystem  →  http://mcp-filesystem:8000/sse
+#   SQLite      →  http://mcp-sqlite:8000/sse
+#
+# Start:  docker compose up -d
+# Logs:   docker compose logs -f <service>
+# Stop:   docker compose down
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Chat UI — http://localhost:3000
+  # Connects to Ollama on the MacBook via Tailscale (OLLAMA_BASE_URL).
+  # Waits for both MCP servers to be healthy before starting.
+  # ---------------------------------------------------------------------------
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:latest  # pin to a specific version e.g. v0.9.6 when ready
+    container_name: open-webui
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "3000:8080"
+    environment:
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
+    volumes:
+      - open-webui-data:/app/backend/data
+    depends_on:
+      mcp-filesystem:
+        condition: service_healthy
+      mcp-sqlite:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - ai-stack
+    logging: &default-logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # MCP Servers
+  #
+  # supergateway bridges stdio-based MCP servers to SSE/HTTP so Open Web UI
+  # can reach them over the Docker network. Neither server publishes ports to
+  # the host — they are only reachable by other containers on ai-stack.
+  #
+  # The npm-cache-* volumes persist downloaded packages so restarts are fast.
+  # Cold starts can take ~30s while npx downloads supergateway and the server.
+  # ---------------------------------------------------------------------------
+
+  mcp-filesystem:
+    image: node:20-alpine
+    container_name: mcp-filesystem
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    working_dir: /app
+    command: >
+      npx -y supergateway
+        --stdio "npx -y @modelcontextprotocol/server-filesystem /mnt/files"
+        --port 8000
+    volumes:
+      - ./data/files:/mnt/files         # add :ro to restrict model to read-only access
+      - npm-cache-filesystem:/root/.npm  # package cache; avoids re-downloading on restart
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8000 || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - ai-stack
+    logging: *default-logging
+
+  mcp-sqlite:
+    image: node:20-alpine
+    container_name: mcp-sqlite
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    working_dir: /app
+    command: >
+      npx -y supergateway
+        --stdio "npx -y mcp-sqlite /mnt/db/main.db"
+        --port 8000
+    volumes:
+      - ./data/sqlite:/mnt/db
+      - npm-cache-sqlite:/root/.npm
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8000 || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - ai-stack
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # ChromaDB — Phase 5 (planned, see docs/Setup.md)
+  # Uncomment both services when ready to add vector search / RAG.
+  # Also create: mkdir -p ./data/chromadb
+  # ChromaDB API:   http://localhost:8000
+  # ChromaDB Admin: http://localhost:3001
+  # ---------------------------------------------------------------------------
+  # chromadb:
+  #   image: chromadb/chroma:latest  # pin to a specific version e.g. 1.5.9 when ready
+  #   container_name: chromadb
+  #   restart: unless-stopped
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./data/chromadb:/chroma/chroma
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/v1/heartbeat || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 20s
+  #   networks:
+  #     - ai-stack
+  #   logging: *default-logging
+
+  # chromadb-admin:
+  #   image: fengzhichao/chromadb-admin:latest  # Docker Hub — ghcr.io/flanker/chromadb-admin does not exist
+  #   container_name: chromadb-admin
+  #   restart: unless-stopped
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   ports:
+  #     - "3001:3000"   # container listens on 3000; exposed on host 3001 to avoid conflict with open-webui
+  #   # No CHROMADB_URL env var — ChromaDB connection is configured in the admin UI.
+  #   # When prompted, enter: http://chromadb:8000  (resolves via Docker DNS on ai-stack network)
+  #   depends_on:
+  #     chromadb:
+  #       condition: service_healthy
+  #   networks:
+  #     - ai-stack
+  #   logging: *default-logging
+
+# -----------------------------------------------------------------------------
+# Volumes
+# Named volumes are managed by Docker and survive container rebuilds.
+# User data (files, sqlite, chromadb) uses bind mounts so the paths are
+# visible on the host and easy to back up from ./data/.
+# -----------------------------------------------------------------------------
+volumes:
+  open-webui-data:
+  npm-cache-filesystem:  # separate caches avoid npm lock contention between containers
+  npm-cache-sqlite:
+
+# -----------------------------------------------------------------------------
+# Networks
+# Single internal bridge network. MCP servers are not exposed on the host,
+# so they are only reachable by containers on this network.
+# -----------------------------------------------------------------------------
+networks:
+  ai-stack:
+    name: ai-stack
+    driver: bridge

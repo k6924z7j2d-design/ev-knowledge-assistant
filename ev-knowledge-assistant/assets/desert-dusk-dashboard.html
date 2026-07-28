@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desert Dusk — Operations Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Palette ── */
+  :root {
+    --ink:       #3C2E20;
+    --ink-mid:   #7A6A52;
+    --terra:     #B87048;
+    --terra-lt:  #C4A882;
+    --sage:      #7A8C6A;
+    --sage-lt:   #C4D8B8;
+    --sand:      #D5C9B8;
+    --canvas:    #F2EBE0;
+    --card:      #FFFFFF;
+    --border:    rgba(60,46,32,.13);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--canvas);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Layout ── */
+  .shell   { display: flex; min-height: 100vh; }
+  .sidebar { width: 220px; flex-shrink: 0; background: var(--ink); padding: 28px 0; display: flex; flex-direction: column; }
+  .main    { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar  { background: var(--card); border-bottom: 0.5px solid var(--border); padding: 0 28px; height: 58px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .content { padding: 28px; flex: 1; }
+
+  /* ── Sidebar ── */
+  .sb-brand {
+    padding: 0 22px 24px;
+    border-bottom: 0.5px solid rgba(255,255,255,.10);
+    margin-bottom: 8px;
+  }
+  .sb-brand-name { font-size: 15px; font-weight: 600; color: #F2EBE0; letter-spacing: .01em; }
+  .sb-brand-sub  { font-size: 11px; color: rgba(242,235,224,.45); margin-top: 1px; }
+
+  .sb-section { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: rgba(242,235,224,.35); padding: 18px 22px 6px; }
+
+  .sb-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 22px; font-size: 13px; color: rgba(242,235,224,.60);
+    cursor: pointer; transition: background .15s, color .15s;
+    border-left: 2.5px solid transparent;
+    text-decoration: none;
+  }
+  .sb-item:hover { background: rgba(255,255,255,.06); color: #F2EBE0; }
+  .sb-item.active { color: #F2EBE0; background: rgba(184,112,72,.18); border-left-color: var(--terra); }
+  .sb-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+
+  .sb-footer { margin-top: auto; padding: 20px 22px 0; border-top: 0.5px solid rgba(255,255,255,.10); }
+  .sb-avatar { display: flex; align-items: center; gap: 10px; }
+  .avatar-circle { width: 34px; height: 34px; border-radius: 50%; background: var(--terra); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #FDF3EB; flex-shrink: 0; }
+  .avatar-name { font-size: 13px; color: rgba(242,235,224,.80); font-weight: 500; }
+  .avatar-role { font-size: 11px; color: rgba(242,235,224,.40); }
+
+  /* ── Topbar ── */
+  .topbar-title { font-size: 15px; font-weight: 500; color: var(--ink); }
+  .topbar-right  { display: flex; align-items: center; gap: 16px; }
+  .topbar-date   { font-size: 12px; color: var(--ink-mid); }
+  .topbar-badge  { background: var(--terra); color: #FDF3EB; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+
+  /* ── Section headings ── */
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--ink-mid); letter-spacing: .03em; text-transform: uppercase; }
+  .section-link  { font-size: 12px; color: var(--terra); text-decoration: none; }
+  .section-link:hover { text-decoration: underline; }
+
+  /* ── KPI row ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+
+  .kpi {
+    background: var(--card);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi.accent-terra { background: var(--terra); border-color: transparent; }
+  .kpi.accent-sage  { background: var(--sage);  border-color: transparent; }
+
+  .kpi-label { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-mid); margin-bottom: 8px; }
+  .kpi.accent-terra .kpi-label { color: #F5DEC8; }
+  .kpi.accent-sage  .kpi-label { color: #D0E4C8; }
+
+  .kpi-val { font-size: 28px; font-weight: 600; color: var(--ink); line-height: 1; }
+  .kpi.accent-terra .kpi-val { color: #FDF3EB; }
+  .kpi.accent-sage  .kpi-val { color: #F4FAF0; }
+
+  .kpi-delta { font-size: 12px; margin-top: 6px; color: var(--sage); font-weight: 500; }
+  .kpi-delta.down { color: var(--terra); }
+  .kpi.accent-terra .kpi-delta { color: #F5DEC8; }
+  .kpi.accent-sage  .kpi-delta { color: #D0E4C8; }
+
+  .kpi-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--sand); }
+  .kpi-bar-fill { height: 100%; background: var(--terra); border-radius: 0 2px 2px 0; }
+  .kpi.accent-terra .kpi-bar { background: rgba(255,255,255,.2); }
+  .kpi.accent-terra .kpi-bar-fill { background: rgba(255,255,255,.6); }
+  .kpi.accent-sage  .kpi-bar { background: rgba(255,255,255,.2); }
+  .kpi.accent-sage  .kpi-bar-fill { background: rgba(255,255,255,.6); }
+
+  /* ── Bottom grid ── */
+  .bottom-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  .card {
+    background: var(--card);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+  }
+  .card.span2 { grid-column: span 2; }
+
+  .card-title { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-mid); margin-bottom: 16px; }
+
+  /* ── Sparkline chart ── */
+  .chart-wrap { height: 100px; display: flex; align-items: flex-end; gap: 5px; }
+  .chart-col-group { flex: 1; display: flex; align-items: flex-end; gap: 2px; }
+  .chart-col {
+    flex: 1; border-radius: 3px 3px 0 0;
+    transition: opacity .15s;
+  }
+  .chart-col:hover { opacity: .75; }
+  .chart-labels { display: flex; justify-content: space-between; margin-top: 8px; }
+  .chart-label  { font-size: 10px; color: var(--ink-mid); }
+
+  /* ── Bar chart ── */
+  .bar-list { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row  { display: flex; align-items: center; gap: 10px; }
+  .bar-name { font-size: 12px; color: var(--ink); min-width: 52px; }
+  .bar-track { flex: 1; height: 7px; background: var(--sand); border-radius: 4px; overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: 4px; transition: width .4s ease; }
+  .bar-pct   { font-size: 12px; font-weight: 600; color: var(--ink); min-width: 32px; text-align: right; }
+
+  /* ── Activity feed ── */
+  .feed-list { display: flex; flex-direction: column; gap: 0; }
+  .feed-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 11px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .feed-dot.terra { background: var(--terra); }
+  .feed-dot.sage  { background: var(--sage); }
+  .feed-dot.sand  { background: var(--sand); border: 1px solid var(--terra-lt); }
+  .feed-text { font-size: 13px; color: var(--ink); flex: 1; line-height: 1.4; }
+  .feed-text strong { font-weight: 600; }
+  .feed-time { font-size: 11px; color: var(--ink-mid); flex-shrink: 0; margin-top: 2px; }
+
+  /* ── Table ── */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl th { text-align: left; font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-mid); padding: 0 0 10px; border-bottom: 0.5px solid var(--border); }
+  .tbl td { padding: 11px 0; border-bottom: 0.5px solid var(--border); color: var(--ink); vertical-align: middle; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl th:not(:first-child), .tbl td:not(:first-child) { text-align: right; }
+
+  .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+  .pill.won    { background: #E8F2E0; color: #3B6B28; }
+  .pill.lost   { background: #FBE8E4; color: #9A3220; }
+  .pill.open   { background: #FDF0E4; color: #8A4E18; }
+
+  /* ── Utility ── */
+  .mt16 { margin-top: 16px; }
+  .mt24 { margin-top: 24px; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .kpi-grid { grid-template-columns: repeat(2,1fr); }
+    .bottom-grid { grid-template-columns: 1fr; }
+    .card.span2 { grid-column: span 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- Sidebar -->
+  <nav class="sidebar" aria-label="Main navigation">
+    <div class="sb-brand">
+      <div class="sb-brand-name">Meridian</div>
+      <div class="sb-brand-sub">Operations platform</div>
+    </div>
+
+    <div class="sb-section">Main</div>
+    <a class="sb-item active" href="#">
+      <span class="sb-icon">◈</span> Overview
+    </a>
+    <a class="sb-item" href="#">
+      <span class="sb-icon">◫</span> Pipeline
+    </a>
+    <a class="sb-item" href="#">
+      <span class="sb-icon">◎</span> Accounts
+    </a>
+    <a class="sb-item" href="#">
+      <span class="sb-icon">◷</span> Activity
+    </a>
+
+    <div class="sb-section">Reports</div>
+    <a class="sb-item" href="#">
+      <span class="sb-icon">◻</span> Revenue
+    </a>
+    <a class="sb-item" href="#">
+      <span class="sb-icon">◈</span> Forecasting
+    </a>
+    <a class="sb-item" href="#">
+      <span class="sb-icon">◑</span> Analytics
+    </a>
+
+    <div class="sb-section">Settings</div>
+    <a class="sb-item" href="#">
+      <span class="sb-icon">◧</span> Team
+    </a>
+    <a class="sb-item" href="#">
+      <span class="sb-icon">⊙</span> Preferences
+    </a>
+
+    <div class="sb-footer">
+      <div class="sb-avatar">
+        <div class="avatar-circle">EW</div>
+        <div>
+          <div class="avatar-name">Eugene W.</div>
+          <div class="avatar-role">Director</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-title">Operations overview</div>
+      <div class="topbar-right">
+        <div class="topbar-date">Q2 · June 2026</div>
+        <div class="topbar-badge">Live</div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="content">
+
+      <!-- KPIs -->
+      <div class="section-head">
+        <div class="section-title">Key metrics</div>
+        <a class="section-link" href="#">Full report →</a>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">Pipeline</div>
+          <div class="kpi-val">$4.1M</div>
+          <div class="kpi-delta">↑ 18% vs last quarter</div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:72%"></div></div>
+        </div>
+        <div class="kpi accent-terra">
+          <div class="kpi-label">Closed won</div>
+          <div class="kpi-val">$1.2M</div>
+          <div class="kpi-delta">On track for target</div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:54%"></div></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Win rate</div>
+          <div class="kpi-val">38%</div>
+          <div class="kpi-delta">↑ 4 pts this quarter</div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:38%"></div></div>
+        </div>
+        <div class="kpi accent-sage">
+          <div class="kpi-label">Avg deal size</div>
+          <div class="kpi-val">$84K</div>
+          <div class="kpi-delta">Steady — no change</div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:60%"></div></div>
+        </div>
+      </div>
+
+      <!-- Charts + Feed -->
+      <div class="section-head">
+        <div class="section-title">Performance</div>
+      </div>
+
+      <div class="bottom-grid">
+
+        <!-- Volume chart -->
+        <div class="card span2">
+          <div class="card-title">Monthly volume — closed deals</div>
+          <div class="chart-wrap">
+            <div class="chart-col-group">
+              <div class="chart-col" style="background:var(--sand); height:38%;"></div>
+            </div>
+            <div class="chart-col-group">
+              <div class="chart-col" style="background:var(--sand); height:52%;"></div>
+            </div>
+            <div class="chart-col-group">
+              <div class="chart-col" style="background:var(--terra-lt); height:44%;"></div>
+            </div>
+            <div class="chart-col-group">
+              <div class="chart-col" style="background:var(--terra-lt); height:60%;"></div>
+            </div>
+            <div class="chart-col-group">
+              <div class="chart-col" style="background:var(--terra); height:68%;"></div>
+            </div>
+            <div class="chart-col-group">
+              <div class="chart-col" style="background:var(--terra); height:75%;"></div>
+            </div>
+            <div class="chart-col-group">
+              <div class="chart-col" style="background:var(--sage); height:88%;"></div>
+            </div>
+            <div class="chart-col-group">
+              <div class="chart-col" style="background:var(--sage); height:100%;"></div>
+            </div>
+          </div>
+          <div class="chart-labels">
+            <span class="chart-label">Nov</span>
+            <span class="chart-label">Dec</span>
+            <span class="chart-label">Jan</span>
+            <span class="chart-label">Feb</span>
+            <span class="chart-label">Mar</span>
+            <span class="chart-label">Apr</span>
+            <span class="chart-label">May</span>
+            <span class="chart-label">Jun</span>
+          </div>
+
+          <!-- By segment bars -->
+          <div class="mt24">
+            <div class="card-title">By segment</div>
+            <div class="bar-list">
+              <div class="bar-row">
+                <div class="bar-name">Enterprise</div>
+                <div class="bar-track"><div class="bar-fill" style="width:82%; background:var(--terra);"></div></div>
+                <div class="bar-pct">82%</div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-name">Mid-market</div>
+                <div class="bar-track"><div class="bar-fill" style="width:64%; background:var(--terra);"></div></div>
+                <div class="bar-pct">64%</div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-name">SMB</div>
+                <div class="bar-track"><div class="bar-fill" style="width:47%; background:var(--sage);"></div></div>
+                <div class="bar-pct">47%</div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-name">Government</div>
+                <div class="bar-track"><div class="bar-fill" style="width:31%; background:var(--sage);"></div></div>
+                <div class="bar-pct">31%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity feed -->
+        <div class="card">
+          <div class="card-title">Recent activity</div>
+          <div class="feed-list">
+            <div class="feed-item">
+              <div class="feed-dot terra"></div>
+              <div class="feed-text"><strong>Acme Corp</strong> deal closed — $220K enterprise contract signed</div>
+              <div class="feed-time">2h ago</div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-dot sage"></div>
+              <div class="feed-text"><strong>Vertex Inc</strong> moved to proposal stage — demo completed</div>
+              <div class="feed-time">4h ago</div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-dot terra"></div>
+              <div class="feed-text"><strong>BlueStar</strong> renewed — 3-year agreement, $180K ARR</div>
+              <div class="feed-time">Yesterday</div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-dot sand"></div>
+              <div class="feed-text"><strong>NovaTech</strong> pushed to Q3 — budget approval delayed</div>
+              <div class="feed-time">2d ago</div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-dot sage"></div>
+              <div class="feed-text"><strong>Pacific Group</strong> discovery call scheduled for Monday</div>
+              <div class="feed-time">2d ago</div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-dot terra"></div>
+              <div class="feed-text"><strong>Ironclad LLC</strong> closed — $95K mid-market win</div>
+              <div class="feed-time">3d ago</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Deal table -->
+      <div class="card mt24">
+        <div class="section-head" style="margin-bottom:0">
+          <div class="card-title" style="margin-bottom:0">Top deals — Q2</div>
+          <a class="section-link" href="#">View all →</a>
+        </div>
+        <table class="tbl mt16">
+          <thead>
+            <tr>
+              <th>Account</th>
+              <th>Owner</th>
+              <th>Segment</th>
+              <th>Value</th>
+              <th>Close date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Acme Corp</strong></td>
+              <td style="color:var(--ink-mid)">J. Rivera</td>
+              <td style="color:var(--ink-mid)">Enterprise</td>
+              <td><strong>$220K</strong></td>
+              <td style="color:var(--ink-mid)">Jun 12</td>
+              <td><span class="pill won">Won</span></td>
+            </tr>
+            <tr>
+              <td><strong>BlueStar</strong></td>
+              <td style="color:var(--ink-mid)">M. Chen</td>
+              <td style="color:var(--ink-mid)">Enterprise</td>
+              <td><strong>$180K</strong></td>
+              <td style="color:var(--ink-mid)">Jun 8</td>
+              <td><span class="pill won">Won</span></td>
+            </tr>
+            <tr>
+              <td><strong>Vertex Inc</strong></td>
+              <td style="color:var(--ink-mid)">D. Park</td>
+              <td style="color:var(--ink-mid)">Mid-market</td>
+              <td><strong>$140K</strong></td>
+              <td style="color:var(--ink-mid)">Jul 2</td>
+              <td><span class="pill open">In progress</span></td>
+            </tr>
+            <tr>
+              <td><strong>Ironclad LLC</strong></td>
+              <td style="color:var(--ink-mid)">S. Okafor</td>
+              <td style="color:var(--ink-mid)">Mid-market</td>
+              <td><strong>$95K</strong></td>
+              <td style="color:var(--ink-mid)">Jun 20</td>
+              <td><span class="pill won">Won</span></td>
+            </tr>
+            <tr>
+              <td><strong>NovaTech</strong></td>
+              <td style="color:var(--ink-mid)">L. Torres</td>
+              <td style="color:var(--ink-mid)">Enterprise</td>
+              <td><strong>$310K</strong></td>
+              <td style="color:var(--ink-mid)">Sep 15</td>
+              <td><span class="pill open">Delayed</span></td>
+            </tr>
+            <tr>
+              <td><strong>Redpoint Co</strong></td>
+              <td style="color:var(--ink-mid)">A. Nguyen</td>
+              <td style="color:var(--ink-mid)">SMB</td>
+              <td><strong>$42K</strong></td>
+              <td style="color:var(--ink-mid)">May 30</td>
+              <td><span class="pill lost">Lost</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+</body>
+</html>
