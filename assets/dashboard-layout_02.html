@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EV Research — Ribbon</title>
+<style>
+  :root{
+    --bg:#fcf8f3;
+    --surface:#fffdfa;
+    --border:#e7ded2;
+    --text:#2a231c;
+    --text-2:#8f8578;
+    --text-3:#b3a99b;
+    --sage:#5b7a63;
+    --sage-tint:#e9f0ec;
+    --seafoam:#5aa89e;
+    --terracotta:#b5713f;
+    --amber:#c98a3e;
+    --grid:#ece4d8;
+    --font-display:Georgia,'Iowan Old Style','Palatino Linotype',serif;
+    --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);}
+
+  /* ===== top ribbon ===== */
+  .ribbon{
+    position:sticky;top:0;z-index:20;
+    display:flex;align-items:center;gap:28px;
+    height:64px;padding:0 32px;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+  }
+  .ribbon-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .ribbon-mark{
+    width:28px;height:28px;border-radius:7px;background:var(--sage);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:var(--font-body);
+  }
+  .ribbon-brand-name{font-weight:600;font-size:14.5px;}
+  .ribbon-nav{display:flex;gap:4px;flex:1;}
+  .ribbon-nav a{
+    padding:8px 14px;border-radius:8px;font-size:14px;color:var(--text-2);
+    text-decoration:none;
+  }
+  .ribbon-nav a.on{background:var(--sage-tint);color:#3f5a48;font-weight:600;}
+  .ribbon-nav a:hover:not(.on){background:#f2ede3;color:var(--text);}
+  .ribbon-user{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .ribbon-avatar{
+    width:32px;height:32px;border-radius:50%;background:var(--seafoam);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;
+  }
+
+  /* ===== page ===== */
+  .page{max-width:1180px;margin:0 auto;padding:44px 32px 100px;}
+
+  .masthead{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    margin-bottom:36px;flex-wrap:wrap;gap:20px;
+  }
+  .masthead h1{
+    font-family:var(--font-display);font-size:44px;font-weight:400;
+    margin:0 0 6px;letter-spacing:-0.01em;
+  }
+  .masthead .sub{color:var(--text-2);font-size:15.5px;margin:0;}
+  .tab-pills{display:flex;gap:6px;}
+  .tab-pill{
+    padding:8px 16px;border-radius:20px;font-size:13.5px;color:var(--text-3);
+    border:1px solid transparent;
+  }
+  .tab-pill.on{background:var(--surface);border-color:var(--border);color:var(--text);font-weight:600;}
+
+  /* ===== stat strip: one card, internal dividers ===== */
+  .stat-strip{
+    display:flex;background:var(--surface);border:1px solid var(--border);
+    border-radius:16px;margin-bottom:24px;overflow:hidden;
+  }
+  .stat-cell{flex:1;padding:22px 26px;position:relative;}
+  .stat-cell + .stat-cell::before{
+    content:"";position:absolute;left:0;top:22px;bottom:22px;width:1px;background:var(--border);
+  }
+  .stat-cell .label{color:var(--text-2);font-size:13px;margin-bottom:8px;}
+  .stat-cell .value{font-size:26px;font-weight:600;letter-spacing:-0.01em;}
+  .stat-cell .delta{font-size:12.5px;color:var(--sage);margin-top:6px;font-weight:600;}
+
+  /* ===== two-col keys/apps ===== */
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;}
+  .panel-accent{height:3px;width:36px;border-radius:2px;background:var(--sage);margin-bottom:14px;}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .panel-title{font-size:15px;font-weight:600;}
+  .panel-link{font-size:13px;color:var(--text-2);text-decoration:none;}
+  .list-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;}
+  .list-left{display:flex;align-items:center;gap:10px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--seafoam);flex-shrink:0;}
+  .list-name{font-size:14.5px;font-weight:500;}
+  .list-desc{color:var(--text-2);font-size:12.5px;}
+  .list-val{font-size:14px;font-weight:600;}
+  .list-val span{color:var(--text-2);font-weight:400;font-size:12px;}
+
+  /* ===== charts ===== */
+  .chart-panel{margin-bottom:16px;}
+  .axis-x{display:flex;justify-content:space-between;color:var(--text-3);font-size:12.5px;padding:0 4px;margin-top:8px;}
+  .legend-row{display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);margin-top:14px;padding-top:14px;font-size:13.5px;}
+
+  .row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  @media (max-width:980px){.row-4{grid-template-columns:repeat(2,1fr);}}
+
+  /* ===== floating chat ===== */
+  .chat-fab{
+    position:fixed;right:28px;bottom:28px;z-index:40;
+    width:56px;height:56px;border-radius:50%;background:var(--sage);color:#fff;
+    display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;
+    box-shadow:0 8px 24px rgba(42,35,28,0.18);
+  }
+  .chat-card{
+    position:fixed;right:28px;bottom:96px;z-index:40;
+    width:360px;max-height:min(560px,70vh);
+    background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    box-shadow:0 16px 40px rgba(42,35,28,0.16);
+    display:none;flex-direction:column;overflow:hidden;
+  }
+  .chat-card.open{display:flex;}
+  .chat-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;}
+  .chat-head svg{color:var(--seafoam);}
+  .chat-close{background:none;border:none;color:var(--text-3);cursor:pointer;padding:4px;}
+  .chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:220px;}
+  .msg{max-width:88%;font-size:13.5px;line-height:1.5;}
+  .msg.a{align-self:flex-start;background:#fff;border:1px solid var(--border);padding:10px 12px;border-radius:10px 10px 10px 2px;}
+  .msg.u{align-self:flex-end;background:var(--seafoam);color:#fff;padding:10px 12px;border-radius:10px 10px 2px 10px;}
+  .chat-input-row{border-top:1px solid var(--border);padding:12px;display:flex;gap:8px;}
+  .chat-input{flex:1;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit;resize:none;outline:none;}
+  .chat-input:focus{border-color:var(--seafoam);}
+  .chat-send{width:36px;height:36px;border-radius:8px;border:none;background:var(--seafoam);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+
+  /* ===== view / subtab switching ===== */
+  .view{display:none;}
+  .view.on{display:block;}
+  .subtab{display:none;}
+  .subtab.on{display:block;}
+
+  /* ===== trends ===== */
+  .trend-section{margin-bottom:28px;}
+  .trend-section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .trend-section-title{font-size:19px;font-weight:600;color:var(--text);}
+  .sort-chip{border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-size:13px;color:var(--text-2);background:var(--surface);}
+  .trend-grid{display:grid;grid-template-columns:1.7fr 1fr;gap:16px;}
+  @media (max-width:900px){.trend-grid{grid-template-columns:1fr;}}
+  .trend-percent{display:flex;align-items:center;gap:6px;font-size:30px;font-weight:700;color:#3f5a48;}
+  .trend-caption{color:var(--text-2);font-size:13px;margin-top:8px;max-width:220px;line-height:1.4;}
+  .trend-empty-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:220px;text-align:center;}
+
+  /* ===== explore ===== */
+  .query-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--border);margin-bottom:20px;}
+  .query-chip{border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13.5px;color:var(--text-2);background:var(--surface);}
+  .query-chip strong{color:var(--text);}
+  .explore-table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:16px;}
+  .explore-table th{text-align:left;background:#f5f1ea;color:var(--text-2);font-weight:600;padding:10px 8px;}
+  .explore-table th:last-child, .explore-table td:last-child{text-align:right;}
+  .explore-table td{padding:14px 8px;border-top:1px solid var(--border);}
+  .bar-track{width:100px;height:6px;border-radius:3px;background:#eee7db;display:inline-block;overflow:hidden;vertical-align:middle;margin-right:10px;}
+  .bar-fill{height:100%;background:var(--seafoam);}
+
+  /* ===== guardrails ===== */
+  .guardrails-panel{text-align:center;padding:70px 20px;}
+  .guardrails-icon{width:52px;height:52px;border-radius:12px;background:var(--sage-tint);color:#3f5a48;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
+  .guardrails-panel h2{font-size:19px;margin:0 0 12px;font-weight:600;}
+  .guardrails-panel p{color:var(--text-2);font-size:14.5px;max-width:420px;margin:0 auto;line-height:1.6;}
+  .configure-btn{margin-top:22px;background:var(--sage);color:#fff;border:none;font-size:14.5px;font-weight:600;padding:11px 26px;border-radius:8px;cursor:pointer;}
+
+  /* ===== EVs (ribbon aesthetic) ===== */
+  .ev-grid-v1{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .ev-card-v1{cursor:pointer;transition:border-color .15s, transform .15s;}
+  .ev-card-v1:hover{border-color:var(--accent,var(--sage));transform:translateY(-2px);}
+  .ev-card-icon-v1{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+  .ev-name-v1{font-family:var(--font-display);font-size:22px;}
+  .ev-trim-v1{color:var(--text-2);font-size:13px;margin-top:2px;}
+  .ev-foot-v1{display:flex;justify-content:space-between;align-items:center;margin-top:16px;}
+  .ev-price-v1{font-size:15px;font-weight:600;}
+  .ev-arrow-v1{font-size:12.5px;color:var(--text-3);}
+  .ev-back-v1{display:inline-flex;align-items:center;gap:6px;color:var(--text-2);font-size:13.5px;cursor:pointer;margin-bottom:18px;}
+  .ev-back-v1:hover{color:var(--text);}
+
+  .bento-v1{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:118px;gap:14px;}
+  .b1{grid-column:span 1;}
+  .b2{grid-column:span 2;}
+  .b3{grid-column:span 3;}
+  .b4{grid-column:span 4;}
+  .bh{grid-column:span 2;grid-row:span 2;}
+  .btile{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;display:flex;flex-direction:column;justify-content:center;}
+  .btile .v{font-size:24px;font-weight:600;letter-spacing:-0.01em;}
+  .btile .v .u{font-size:13px;font-weight:400;color:var(--text-2);margin-left:3px;}
+  .btile .l{color:var(--text-2);font-size:12.5px;margin-top:6px;}
+  .bhero-name{font-family:var(--font-display);font-size:26px;line-height:1.15;}
+  .bhero-trim{color:var(--text-2);font-size:13px;margin:6px 0 10px;}
+  .bhero-price{font-size:18px;font-weight:600;}
+  .bwide{display:flex;gap:36px;align-items:center;height:100%;}
+  .bstrip{display:flex;justify-content:space-between;height:100%;align-items:center;gap:16px;}
+  .ev-page{display:none;}
+  .ev-page.on{display:block;}
+</style>
+</head>
+<body>
+
+  <div class="ribbon">
+    <div class="ribbon-brand">
+      <div class="ribbon-mark">EV</div>
+      <div class="ribbon-brand-name">EV Research</div>
+    </div>
+    <nav class="ribbon-nav">
+      <a class="on" id="nav-activity" onclick="showView('activity')">Activity</a>
+      <a id="nav-evs" onclick="showView('evs')">EVs</a>
+      <a>Models</a>
+      <a>API Keys</a>
+      <a>Guardrails</a>
+      <a>Billing</a>
+    </nav>
+    <div class="ribbon-user">
+      <div class="ribbon-avatar">JD</div>
+    </div>
+  </div>
+
+  <div class="page">
+   <div class="view on" id="view-activity">
+
+    <div class="masthead">
+      <div>
+        <h1>Activity</h1>
+        <p class="sub">Your usage across models on OpenRouter</p>
+      </div>
+      <div class="tab-pills">
+        <span class="tab-pill on" id="pill-overview" onclick="showTab('overview')">Overview</span>
+        <span class="tab-pill" id="pill-trends" onclick="showTab('trends')">Trends</span>
+        <span class="tab-pill" id="pill-explore" onclick="showTab('explore')">Explore</span>
+        <span class="tab-pill" id="pill-guardrails" onclick="showTab('guardrails')">Guardrails</span>
+      </div>
+    </div>
+
+    <div class="subtab on" id="tab-overview">
+    <div class="stat-strip">
+      <div class="stat-cell">
+        <div class="label">Total spend</div>
+        <div class="value">$2.35</div>
+        <div class="delta">↑ this week</div>
+      </div>
+      <div class="stat-cell">
+        <div class="label">Requests</div>
+        <div class="value">62</div>
+        <div class="delta">↑ this week</div>
+      </div>
+      <div class="stat-cell">
+        <div class="label">Token volume</div>
+        <div class="value">21K</div>
+        <div class="delta">↑ this week</div>
+      </div>
+      <div class="stat-cell">
+        <div class="label">Cache hit rate</div>
+        <div class="value">17.4%</div>
+        <div class="delta">↑ improving</div>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="panel">
+        <div class="panel-accent"></div>
+        <div class="panel-head">
+          <div class="panel-title">Top API Keys</div>
+          <a class="panel-link" href="#">Explore ›</a>
+        </div>
+        <div class="list-row">
+          <div class="list-left"><span class="dot"></span><span class="list-name">Chatroom</span></div>
+          <div class="list-val">21K <span>tok</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-accent" style="background:var(--seafoam);"></div>
+        <div class="panel-head">
+          <div class="panel-title">Top Apps</div>
+          <a class="panel-link" href="#">Explore ›</a>
+        </div>
+        <div class="list-row">
+          <div class="list-left">
+            <span class="dot" style="background:var(--seafoam);"></span>
+            <div>
+              <div class="list-name">OpenRouter: Chatroom</div>
+              <div class="list-desc">Chat with multiple LLMs at once</div>
+            </div>
+          </div>
+          <div class="list-val">21K <span>tok</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel chart-panel">
+      <div class="panel-head">
+        <div class="panel-title">Usage by model</div>
+        <a class="panel-link" href="#">Explore ›</a>
+      </div>
+      <svg width="100%" height="280" viewBox="0 0 1116 280" preserveAspectRatio="none">
+        <g stroke="var(--grid)" stroke-dasharray="3,4">
+          <line x1="0" y1="0" x2="1116" y2="0"/><line x1="0" y1="70" x2="1116" y2="70"/>
+          <line x1="0" y1="140" x2="1116" y2="140"/><line x1="0" y1="210" x2="1116" y2="210"/><line x1="0" y1="279" x2="1116" y2="279"/>
+          <line x1="0" y1="0" x2="0" y2="280"/><line x1="159" y1="0" x2="159" y2="280"/><line x1="318" y1="0" x2="318" y2="280"/>
+          <line x1="477" y1="0" x2="477" y2="280"/><line x1="637" y1="0" x2="637" y2="280"/><line x1="796" y1="0" x2="796" y2="280"/>
+          <line x1="955" y1="0" x2="955" y2="280"/><line x1="1115" y1="0" x2="1115" y2="280"/>
+        </g>
+        <path d="M0,205 L159,173 L318,233 L477,135 L637,187 L796,103 L955,159 L1115,65 L1115,279 L0,279 Z" fill="var(--seafoam)" opacity="0.10" stroke="none"/>
+        <path d="M0,205 L159,173 L318,233 L477,135 L637,187 L796,103 L955,159 L1115,65" fill="none" stroke="var(--seafoam)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <g fill="var(--seafoam)">
+          <circle cx="0" cy="205" r="4"/><circle cx="159" cy="173" r="4"/><circle cx="318" cy="233" r="4"/><circle cx="477" cy="135" r="4"/>
+          <circle cx="637" cy="187" r="4"/><circle cx="796" cy="103" r="4"/><circle cx="955" cy="159" r="4"/><circle cx="1115" cy="65" r="4"/>
+        </g>
+      </svg>
+      <div class="axis-x">
+        <span>Jun 26</span><span>Jun 27</span><span>Jun 28</span><span>Jun 29</span><span>Jun 30</span><span>Jul 1</span><span>Jul 2</span><span>Jul 3</span>
+      </div>
+      <div class="legend-row"><span class="dot" style="background:var(--seafoam);"></span> gpt-oss-120b</div>
+    </div>
+
+    <div class="row-4">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title" style="font-size:14px;">Usage type</div></div>
+        <svg width="100%" height="150" viewBox="0 0 240 150" preserveAspectRatio="none">
+          <g stroke="var(--grid)" stroke-dasharray="3,4">
+            <line x1="0" y1="0" x2="240" y2="0"/><line x1="0" y1="75" x2="240" y2="75"/><line x1="0" y1="149" x2="240" y2="149"/>
+          </g>
+          <g>
+            <rect x="8" y="111" width="12" height="38" fill="var(--sage)"/><rect x="8" y="105" width="12" height="6" fill="var(--amber)"/>
+            <rect x="38" y="94" width="12" height="55" fill="var(--sage)"/><rect x="38" y="85" width="12" height="9" fill="var(--amber)"/>
+            <rect x="68" y="125" width="12" height="24" fill="var(--sage)"/><rect x="68" y="121" width="12" height="4" fill="var(--amber)"/>
+            <rect x="98" y="75" width="12" height="74" fill="var(--sage)"/><rect x="98" y="63" width="12" height="12" fill="var(--amber)"/>
+            <rect x="128" y="101" width="12" height="48" fill="var(--sage)"/><rect x="128" y="93" width="12" height="8" fill="var(--amber)"/>
+            <rect x="158" y="58" width="12" height="91" fill="var(--sage)"/><rect x="158" y="43" width="12" height="15" fill="var(--amber)"/>
+            <rect x="188" y="87" width="12" height="62" fill="var(--sage)"/><rect x="188" y="76" width="12" height="11" fill="var(--amber)"/>
+            <rect x="218" y="39" width="12" height="110" fill="var(--sage)"/><rect x="218" y="21" width="12" height="18" fill="var(--amber)"/>
+          </g>
+        </svg>
+        <div class="legend-row" style="margin-top:8px;padding-top:8px;">
+          <span class="dot" style="background:var(--amber);"></span> BYOK
+          <span class="dot" style="background:var(--sage);margin-left:10px;"></span> Spend
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title" style="font-size:14px;">Requests</div></div>
+        <svg width="100%" height="150" viewBox="0 0 240 150" preserveAspectRatio="none">
+          <g stroke="var(--grid)" stroke-dasharray="3,4">
+            <line x1="0" y1="0" x2="240" y2="0"/><line x1="0" y1="75" x2="240" y2="75"/><line x1="0" y1="149" x2="240" y2="149"/>
+          </g>
+          <g fill="var(--seafoam)">
+            <rect x="8" y="112" width="12" height="37"/><rect x="38" y="87" width="12" height="62"/><rect x="68" y="122" width="12" height="27"/>
+            <rect x="98" y="65" width="12" height="84"/><rect x="128" y="93" width="12" height="56"/><rect x="158" y="47" width="12" height="102"/>
+            <rect x="188" y="74" width="12" height="75"/><rect x="218" y="19" width="12" height="130"/>
+          </g>
+        </svg>
+        <div class="legend-row" style="margin-top:8px;padding-top:8px;"><span class="dot" style="background:var(--seafoam);"></span> gpt-oss-120b</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title" style="font-size:14px;">Token breakdown</div></div>
+        <svg width="100%" height="150" viewBox="0 0 240 150" preserveAspectRatio="none">
+          <g stroke="var(--grid)" stroke-dasharray="3,4">
+            <line x1="0" y1="0" x2="240" y2="0"/><line x1="0" y1="75" x2="240" y2="75"/><line x1="0" y1="149" x2="240" y2="149"/>
+          </g>
+          <g>
+            <rect x="8" y="143" width="12" height="6" fill="var(--terracotta)"/><rect x="8" y="113" width="12" height="30" fill="var(--sage)"/><rect x="8" y="109" width="12" height="4" fill="var(--seafoam)"/>
+            <rect x="38" y="140" width="12" height="9" fill="var(--terracotta)"/><rect x="38" y="97" width="12" height="43" fill="var(--sage)"/><rect x="38" y="91" width="12" height="6" fill="var(--seafoam)"/>
+            <rect x="68" y="145" width="12" height="4" fill="var(--terracotta)"/><rect x="68" y="126" width="12" height="19" fill="var(--sage)"/><rect x="68" y="124" width="12" height="2" fill="var(--seafoam)"/>
+            <rect x="98" y="137" width="12" height="12" fill="var(--terracotta)"/><rect x="98" y="80" width="12" height="57" fill="var(--sage)"/><rect x="98" y="72" width="12" height="8" fill="var(--seafoam)"/>
+            <rect x="128" y="142" width="12" height="7" fill="var(--terracotta)"/><rect x="128" y="105" width="12" height="37" fill="var(--sage)"/><rect x="128" y="100" width="12" height="5" fill="var(--seafoam)"/>
+            <rect x="158" y="135" width="12" height="14" fill="var(--terracotta)"/><rect x="158" y="64" width="12" height="71" fill="var(--sage)"/><rect x="158" y="55" width="12" height="9" fill="var(--seafoam)"/>
+            <rect x="188" y="140" width="12" height="9" fill="var(--terracotta)"/><rect x="188" y="92" width="12" height="48" fill="var(--sage)"/><rect x="188" y="85" width="12" height="7" fill="var(--seafoam)"/>
+            <rect x="218" y="132" width="12" height="17" fill="var(--terracotta)"/><rect x="218" y="46" width="12" height="86" fill="var(--sage)"/><rect x="218" y="34" width="12" height="12" fill="var(--seafoam)"/>
+          </g>
+        </svg>
+        <div class="legend-row" style="margin-top:8px;padding-top:8px;">
+          <span class="dot" style="background:var(--terracotta);"></span> Reason
+          <span class="dot" style="background:var(--sage);margin-left:8px;"></span> Compl.
+          <span class="dot" style="background:var(--seafoam);margin-left:8px;"></span> Prompt
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title" style="font-size:14px;">Prompt caching</div></div>
+        <svg width="100%" height="150" viewBox="0 0 240 150" preserveAspectRatio="none">
+          <g stroke="var(--grid)" stroke-dasharray="3,4">
+            <line x1="0" y1="0" x2="240" y2="0"/><line x1="0" y1="75" x2="240" y2="75"/><line x1="0" y1="149" x2="240" y2="149"/>
+          </g>
+          <g>
+            <rect x="8" y="104" width="12" height="45" fill="#c9beae"/><rect x="8" y="99" width="12" height="5" fill="var(--amber)"/>
+            <rect x="38" y="86" width="12" height="63" fill="#c9beae"/><rect x="38" y="77" width="12" height="9" fill="var(--amber)"/>
+            <rect x="68" y="120" width="12" height="29" fill="#c9beae"/><rect x="68" y="118" width="12" height="2" fill="var(--amber)"/>
+            <rect x="98" y="67" width="12" height="82" fill="#c9beae"/><rect x="98" y="52" width="12" height="15" fill="var(--amber)"/>
+            <rect x="128" y="96" width="12" height="53" fill="#c9beae"/><rect x="128" y="87" width="12" height="9" fill="var(--amber)"/>
+            <rect x="158" y="55" width="12" height="94" fill="#c9beae"/><rect x="158" y="31" width="12" height="24" fill="var(--amber)"/>
+            <rect x="188" y="83" width="12" height="66" fill="#c9beae"/><rect x="188" y="69" width="12" height="14" fill="var(--amber)"/>
+            <rect x="218" y="42" width="12" height="107" fill="#c9beae"/><rect x="218" y="6" width="12" height="36" fill="var(--amber)"/>
+          </g>
+        </svg>
+        <div class="legend-row" style="margin-top:8px;padding-top:8px;">
+          <span class="dot" style="background:#c9beae;"></span> Uncached
+          <span class="dot" style="background:var(--amber);margin-left:8px;"></span> Cached
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <!-- ============ TRENDS ============ -->
+    <div class="subtab" id="tab-trends">
+
+      <div class="trend-section">
+        <div class="trend-section-head">
+          <div class="trend-section-title">Models</div>
+          <span class="sort-chip">Spend ⇅</span>
+        </div>
+        <div class="trend-grid">
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">Spend over time</div><a class="panel-link" href="#">Explore ›</a></div>
+            <svg width="100%" height="300" viewBox="0 0 830 360" preserveAspectRatio="none">
+              <g stroke="var(--grid)" stroke-dasharray="3,4">
+                <line x1="0" y1="0" x2="830" y2="0"/><line x1="0" y1="90" x2="830" y2="90"/><line x1="0" y1="180" x2="830" y2="180"/>
+                <line x1="0" y1="270" x2="830" y2="270"/><line x1="0" y1="359" x2="830" y2="359"/>
+                <line x1="0" y1="0" x2="0" y2="360"/><line x1="118" y1="0" x2="118" y2="360"/><line x1="236" y1="0" x2="236" y2="360"/>
+                <line x1="354" y1="0" x2="354" y2="360"/><line x1="472" y1="0" x2="472" y2="360"/><line x1="590" y1="0" x2="590" y2="360"/>
+                <line x1="708" y1="0" x2="708" y2="360"/><line x1="829" y1="0" x2="829" y2="360"/>
+              </g>
+              <g>
+                <rect x="32" y="289" width="40" height="70" fill="var(--seafoam)"/><rect x="32" y="264" width="40" height="25" fill="var(--sage)"/><rect x="32" y="251" width="40" height="13" fill="var(--terracotta)"/>
+                <rect x="136" y="258" width="40" height="101" fill="var(--seafoam)"/><rect x="136" y="222" width="40" height="36" fill="var(--sage)"/><rect x="136" y="204" width="40" height="18" fill="var(--terracotta)"/>
+                <rect x="239" y="315" width="40" height="44" fill="var(--seafoam)"/><rect x="239" y="300" width="40" height="15" fill="var(--sage)"/><rect x="239" y="292" width="40" height="8" fill="var(--terracotta)"/>
+                <rect x="343" y="224" width="40" height="135" fill="var(--seafoam)"/><rect x="343" y="176" width="40" height="48" fill="var(--sage)"/><rect x="343" y="151" width="40" height="25" fill="var(--terracotta)"/>
+                <rect x="447" y="272" width="40" height="87" fill="var(--seafoam)"/><rect x="447" y="241" width="40" height="31" fill="var(--sage)"/><rect x="447" y="225" width="40" height="16" fill="var(--terracotta)"/>
+                <rect x="551" y="193" width="40" height="166" fill="var(--seafoam)"/><rect x="551" y="134" width="40" height="59" fill="var(--sage)"/><rect x="551" y="104" width="40" height="30" fill="var(--terracotta)"/>
+                <rect x="654" y="245" width="40" height="114" fill="var(--seafoam)"/><rect x="654" y="205" width="40" height="40" fill="var(--sage)"/><rect x="654" y="184" width="40" height="21" fill="var(--terracotta)"/>
+                <rect x="758" y="158" width="40" height="201" fill="var(--seafoam)"/><rect x="758" y="87" width="40" height="71" fill="var(--sage)"/><rect x="758" y="50" width="40" height="37" fill="var(--terracotta)"/>
+              </g>
+            </svg>
+            <div class="axis-x"><span>Jun 26</span><span>Jun 27</span><span>Jun 28</span><span>Jun 29</span><span>Jun 30</span><span>Jul 1</span><span>Jul 2</span><span>Jul 3</span></div>
+            <div class="legend-row">
+              <span class="dot" style="background:var(--seafoam);"></span> gpt-oss-120b
+              <span class="dot" style="background:var(--sage);margin-left:12px;"></span> gpt-oss-20b
+              <span class="dot" style="background:var(--terracotta);margin-left:12px;"></span> qwen-2.5-72b
+            </div>
+          </div>
+          <div class="panel trend-empty-panel">
+            <div class="trend-percent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg>+145%</div>
+            <div class="trend-caption">$2.35 this period vs $0.96 prior period</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="trend-section">
+        <div class="trend-section-head">
+          <div class="trend-section-title">API Keys</div>
+          <span class="sort-chip">Spend ⇅</span>
+        </div>
+        <div class="trend-grid">
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">Spend over time</div><a class="panel-link" href="#">Explore ›</a></div>
+            <svg width="100%" height="300" viewBox="0 0 830 360" preserveAspectRatio="none">
+              <g stroke="var(--grid)" stroke-dasharray="3,4">
+                <line x1="0" y1="0" x2="830" y2="0"/><line x1="0" y1="90" x2="830" y2="90"/><line x1="0" y1="180" x2="830" y2="180"/>
+                <line x1="0" y1="270" x2="830" y2="270"/><line x1="0" y1="359" x2="830" y2="359"/>
+                <line x1="0" y1="0" x2="0" y2="360"/><line x1="118" y1="0" x2="118" y2="360"/><line x1="236" y1="0" x2="236" y2="360"/>
+                <line x1="354" y1="0" x2="354" y2="360"/><line x1="472" y1="0" x2="472" y2="360"/><line x1="590" y1="0" x2="590" y2="360"/>
+                <line x1="708" y1="0" x2="708" y2="360"/><line x1="829" y1="0" x2="829" y2="360"/>
+              </g>
+              <g>
+                <rect x="32" y="289" width="40" height="70" fill="var(--seafoam)"/><rect x="32" y="264" width="40" height="25" fill="var(--sage)"/><rect x="32" y="251" width="40" height="13" fill="var(--terracotta)"/>
+                <rect x="136" y="258" width="40" height="101" fill="var(--seafoam)"/><rect x="136" y="222" width="40" height="36" fill="var(--sage)"/><rect x="136" y="204" width="40" height="18" fill="var(--terracotta)"/>
+                <rect x="239" y="315" width="40" height="44" fill="var(--seafoam)"/><rect x="239" y="300" width="40" height="15" fill="var(--sage)"/><rect x="239" y="292" width="40" height="8" fill="var(--terracotta)"/>
+                <rect x="343" y="224" width="40" height="135" fill="var(--seafoam)"/><rect x="343" y="176" width="40" height="48" fill="var(--sage)"/><rect x="343" y="151" width="40" height="25" fill="var(--terracotta)"/>
+                <rect x="447" y="272" width="40" height="87" fill="var(--seafoam)"/><rect x="447" y="241" width="40" height="31" fill="var(--sage)"/><rect x="447" y="225" width="40" height="16" fill="var(--terracotta)"/>
+                <rect x="551" y="193" width="40" height="166" fill="var(--seafoam)"/><rect x="551" y="134" width="40" height="59" fill="var(--sage)"/><rect x="551" y="104" width="40" height="30" fill="var(--terracotta)"/>
+                <rect x="654" y="245" width="40" height="114" fill="var(--seafoam)"/><rect x="654" y="205" width="40" height="40" fill="var(--sage)"/><rect x="654" y="184" width="40" height="21" fill="var(--terracotta)"/>
+                <rect x="758" y="158" width="40" height="201" fill="var(--seafoam)"/><rect x="758" y="87" width="40" height="71" fill="var(--sage)"/><rect x="758" y="50" width="40" height="37" fill="var(--terracotta)"/>
+              </g>
+            </svg>
+            <div class="axis-x"><span>Jun 26</span><span>Jun 27</span><span>Jun 28</span><span>Jun 29</span><span>Jun 30</span><span>Jul 1</span><span>Jul 2</span><span>Jul 3</span></div>
+            <div class="legend-row">
+              <span class="dot" style="background:var(--seafoam);"></span> Chatroom
+              <span class="dot" style="background:var(--sage);margin-left:12px;"></span> prod-server
+              <span class="dot" style="background:var(--terracotta);margin-left:12px;"></span> mobile-app-key
+            </div>
+          </div>
+          <div class="panel trend-empty-panel">
+            <div class="trend-percent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg>+145%</div>
+            <div class="trend-caption">$2.35 this period vs $0.96 prior period</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="trend-section">
+        <div class="trend-section-head">
+          <div class="trend-section-title">Apps</div>
+          <span class="sort-chip">Spend ⇅</span>
+        </div>
+        <div class="trend-grid">
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">Spend over time</div><a class="panel-link" href="#">Explore ›</a></div>
+            <svg width="100%" height="300" viewBox="0 0 830 360" preserveAspectRatio="none">
+              <g stroke="var(--grid)" stroke-dasharray="3,4">
+                <line x1="0" y1="0" x2="830" y2="0"/><line x1="0" y1="90" x2="830" y2="90"/><line x1="0" y1="180" x2="830" y2="180"/>
+                <line x1="0" y1="270" x2="830" y2="270"/><line x1="0" y1="359" x2="830" y2="359"/>
+                <line x1="0" y1="0" x2="0" y2="360"/><line x1="118" y1="0" x2="118" y2="360"/><line x1="236" y1="0" x2="236" y2="360"/>
+                <line x1="354" y1="0" x2="354" y2="360"/><line x1="472" y1="0" x2="472" y2="360"/><line x1="590" y1="0" x2="590" y2="360"/>
+                <line x1="708" y1="0" x2="708" y2="360"/><line x1="829" y1="0" x2="829" y2="360"/>
+              </g>
+              <g>
+                <rect x="32" y="289" width="40" height="70" fill="var(--seafoam)"/><rect x="32" y="264" width="40" height="25" fill="var(--sage)"/><rect x="32" y="251" width="40" height="13" fill="var(--terracotta)"/>
+                <rect x="136" y="258" width="40" height="101" fill="var(--seafoam)"/><rect x="136" y="222" width="40" height="36" fill="var(--sage)"/><rect x="136" y="204" width="40" height="18" fill="var(--terracotta)"/>
+                <rect x="239" y="315" width="40" height="44" fill="var(--seafoam)"/><rect x="239" y="300" width="40" height="15" fill="var(--sage)"/><rect x="239" y="292" width="40" height="8" fill="var(--terracotta)"/>
+                <rect x="343" y="224" width="40" height="135" fill="var(--seafoam)"/><rect x="343" y="176" width="40" height="48" fill="var(--sage)"/><rect x="343" y="151" width="40" height="25" fill="var(--terracotta)"/>
+                <rect x="447" y="272" width="40" height="87" fill="var(--seafoam)"/><rect x="447" y="241" width="40" height="31" fill="var(--sage)"/><rect x="447" y="225" width="40" height="16" fill="var(--terracotta)"/>
+                <rect x="551" y="193" width="40" height="166" fill="var(--seafoam)"/><rect x="551" y="134" width="40" height="59" fill="var(--sage)"/><rect x="551" y="104" width="40" height="30" fill="var(--terracotta)"/>
+                <rect x="654" y="245" width="40" height="114" fill="var(--seafoam)"/><rect x="654" y="205" width="40" height="40" fill="var(--sage)"/><rect x="654" y="184" width="40" height="21" fill="var(--terracotta)"/>
+                <rect x="758" y="158" width="40" height="201" fill="var(--seafoam)"/><rect x="758" y="87" width="40" height="71" fill="var(--sage)"/><rect x="758" y="50" width="40" height="37" fill="var(--terracotta)"/>
+              </g>
+            </svg>
+            <div class="axis-x"><span>Jun 26</span><span>Jun 27</span><span>Jun 28</span><span>Jun 29</span><span>Jun 30</span><span>Jul 1</span><span>Jul 2</span><span>Jul 3</span></div>
+            <div class="legend-row">
+              <span class="dot" style="background:var(--seafoam);"></span> OpenRouter: Chatroom
+              <span class="dot" style="background:var(--sage);margin-left:12px;"></span> Direct API
+              <span class="dot" style="background:var(--terracotta);margin-left:12px;"></span> LibreChat
+            </div>
+          </div>
+          <div class="panel trend-empty-panel">
+            <div class="trend-percent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg>+145%</div>
+            <div class="trend-caption">$2.35 this period vs $0.96 prior period</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============ EXPLORE ============ -->
+    <div class="subtab" id="tab-explore">
+      <div class="query-row">
+        <span class="query-chip"><strong>Total Usage ($)</strong> ⇅</span>
+        <span style="color:var(--text-2);font-size:13.5px;">by</span>
+        <span class="query-chip"><strong>Model</strong> ⇅</span>
+        <span class="query-chip">+ Subgroup</span>
+        <span class="query-chip">Top ⇅</span>
+        <span class="query-chip">10 ⇅</span>
+        <span class="query-chip">Rollup: <strong>Total</strong> ⇅</span>
+      </div>
+      <div class="panel">
+        <svg width="100%" height="280" viewBox="0 0 1310 360" preserveAspectRatio="none">
+          <g stroke="var(--grid)" stroke-dasharray="3,4">
+            <line x1="0" y1="0" x2="1310" y2="0"/><line x1="0" y1="90" x2="1310" y2="90"/><line x1="0" y1="180" x2="1310" y2="180"/>
+            <line x1="0" y1="270" x2="1310" y2="270"/><line x1="0" y1="359" x2="1310" y2="359"/>
+            <line x1="0" y1="0" x2="0" y2="360"/><line x1="187" y1="0" x2="187" y2="360"/><line x1="374" y1="0" x2="374" y2="360"/>
+            <line x1="561" y1="0" x2="561" y2="360"/><line x1="748" y1="0" x2="748" y2="360"/><line x1="935" y1="0" x2="935" y2="360"/>
+            <line x1="1122" y1="0" x2="1122" y2="360"/><line x1="1309" y1="0" x2="1309" y2="360"/>
+          </g>
+          <path d="M0,253 L187,205 L374,293 L561,152 L748,226 L935,105 L1122,185 L1309,51 L1309,359 L0,359 Z" fill="var(--seafoam)" opacity="0.10" stroke="none"/>
+          <path d="M0,253 L187,205 L374,293 L561,152 L748,226 L935,105 L1122,185 L1309,51" fill="none" stroke="var(--seafoam)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <div class="axis-x"><span>Jun 26</span><span>Jun 27</span><span>Jun 28</span><span>Jun 29</span><span>Jun 30</span><span>Jul 1</span><span>Jul 2</span><span>Jul 3</span></div>
+        <table class="explore-table">
+          <thead><tr><th>Model</th><th>Value</th><th>% of Total</th></tr></thead>
+          <tbody>
+            <tr><td>gpt-oss-120b</td><td style="text-align:right;color:var(--seafoam);font-weight:600;">$1.53</td><td><span class="bar-track"><span class="bar-fill" style="width:65.1%;"></span></span>65.1%</td></tr>
+            <tr><td>gpt-oss-20b</td><td style="text-align:right;color:var(--sage);font-weight:600;">$0.54</td><td><span class="bar-track"><span class="bar-fill" style="width:23.0%;background:var(--sage);"></span></span>23.0%</td></tr>
+            <tr><td>qwen-2.5-72b</td><td style="text-align:right;color:var(--terracotta);font-weight:600;">$0.28</td><td><span class="bar-track"><span class="bar-fill" style="width:11.9%;background:var(--terracotta);"></span></span>11.9%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ GUARDRAILS ============ -->
+    <div class="subtab" id="tab-guardrails">
+      <div class="guardrails-panel">
+        <div class="guardrails-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 L4 5 L4 12 C4 17 7.5 20.5 12 22 C16.5 20.5 20 17 20 12 L20 5 Z"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16.5" r="0.9" fill="currentColor" stroke="none"/></svg>
+        </div>
+        <h2>Set up Guardrails</h2>
+        <p>Protect your API usage with content filters, spending limits, and usage policies. Once configured, enforcement stats will appear here.</p>
+        <button class="configure-btn">Configure</button>
+      </div>
+    </div>
+
+   </div>
+   <!-- /view-activity -->
+
+   <!-- ============ EVs ============ -->
+   <div class="view" id="view-evs">
+
+    <div class="ev-page on" id="ev-page-grid">
+      <div class="masthead"><div><h1>Garage</h1><p class="sub">4 vehicles · Fictional spec sheets for demo purposes</p></div></div>
+      <div class="ev-grid-v1">
+        <div class="ev-card-v1 panel" style="--accent:var(--sage);" onclick="showEv('voltra')">
+          <div class="ev-card-icon-v1" style="background:var(--sage-tint);color:var(--sage);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15 L2.7 10.8 C2.4 9.9 3.1 9 4.1 9 L19.9 9 C20.9 9 21.6 9.9 21.3 10.8 L20 15"/><rect x="3" y="15" width="18" height="4.5" rx="1.6"/><circle cx="7" cy="19.5" r="1.8"/><circle cx="17" cy="19.5" r="1.8"/></svg>
+          </div>
+          <div class="ev-name-v1">Voltra Aurora GT</div>
+          <div class="ev-trim-v1">Long Range · Dual Motor AWD</div>
+          <div class="ev-foot-v1"><span class="ev-price-v1">$52,990</span><span class="ev-arrow-v1">View specs ›</span></div>
+        </div>
+
+        <div class="ev-card-v1 panel" style="--accent:var(--seafoam);" onclick="showEv('solis')">
+          <div class="ev-card-icon-v1" style="background:#eaf1f0;color:var(--seafoam);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15 L2.7 10.8 C2.4 9.9 3.1 9 4.1 9 L19.9 9 C20.9 9 21.6 9.9 21.3 10.8 L20 15"/><rect x="3" y="15" width="18" height="4.5" rx="1.6"/><circle cx="7" cy="19.5" r="1.8"/><circle cx="17" cy="19.5" r="1.8"/></svg>
+          </div>
+          <div class="ev-name-v1">Solis Meridian</div>
+          <div class="ev-trim-v1">Standard Range · Rear-Wheel Drive</div>
+          <div class="ev-foot-v1"><span class="ev-price-v1">$38,400</span><span class="ev-arrow-v1">View specs ›</span></div>
+        </div>
+
+        <div class="ev-card-v1 panel" style="--accent:var(--amber);" onclick="showEv('kestrel')">
+          <div class="ev-card-icon-v1" style="background:#f2ede3;color:var(--amber);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 15 L2 10 L7 10 L9 7 L15 7 L15 15"/><path d="M15 15 L22 15 L22 11 L18 11 L15 7"/><circle cx="6.5" cy="18" r="2.2"/><circle cx="18.5" cy="18" r="2.2"/></svg>
+          </div>
+          <div class="ev-name-v1">Kestrel Ranger EV</div>
+          <div class="ev-trim-v1">Extended Range · Dual Motor AWD</div>
+          <div class="ev-foot-v1"><span class="ev-price-v1">$64,900</span><span class="ev-arrow-v1">View specs ›</span></div>
+        </div>
+
+        <div class="ev-card-v1 panel" style="--accent:var(--terracotta);" onclick="showEv('nimbus')">
+          <div class="ev-card-icon-v1" style="background:#f2ede3;color:var(--terracotta);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15 L4.5 11 C5.3 9.6 6.7 9 8.2 9 L15 9 C16.5 9 17.8 9.7 18.6 10.9 L21 15"/><rect x="2.5" y="15" width="19" height="4" rx="1.6"/><circle cx="7" cy="19" r="1.8"/><circle cx="17" cy="19" r="1.8"/></svg>
+          </div>
+          <div class="ev-name-v1">Nimbus Coupe SE</div>
+          <div class="ev-trim-v1">Performance · Rear-Wheel Drive</div>
+          <div class="ev-foot-v1"><span class="ev-price-v1">$61,750</span><span class="ev-arrow-v1">View specs ›</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ev-page" id="ev-page-voltra">
+      <span class="ev-back-v1" onclick="showEvGrid()">‹ All EVs</span>
+      <div class="masthead"><div><h1>Voltra Aurora GT</h1><p class="sub">2026 · Long Range AWD · Fictional spec sheet</p></div></div>
+      <div class="bento-v1">
+        <div class="btile bh"><div class="bhero-name">Voltra<br>Aurora GT</div><div><div class="bhero-trim">Long Range · Dual Motor AWD</div><div class="bhero-price">$52,990</div></div></div>
+        <div class="btile b1"><div class="v">340<span class="u">mi</span></div><div class="l">Range</div></div>
+        <div class="btile b1"><div class="v">3.8<span class="u">sec</span></div><div class="l">0–60 mph</div></div>
+        <div class="btile b1"><div class="v">155<span class="u">mph</span></div><div class="l">Top Speed</div></div>
+        <div class="btile b1"><div class="v">91<span class="u">kWh</span></div><div class="l">Battery</div></div>
+        <div class="btile b1"><div class="v">18<span class="u">min</span></div><div class="l">Fast Charge</div></div>
+        <div class="btile b2"><div class="bwide"><div><div class="v">480<span class="u">hp</span></div><div class="l">Output</div></div><div><div class="v">550<span class="u">lb-ft</span></div><div class="l">Torque</div></div></div></div>
+        <div class="btile b1"><div class="v">3.2<span class="u">mi/kWh</span></div><div class="l">Efficiency</div></div>
+        <div class="btile b1"><div class="v" style="font-size:18px;">Dual Motor</div><div class="l">Drivetrain</div></div>
+        <div class="btile b3"><div class="bstrip"><div><div class="v">5</div><div class="l">Seats</div></div><div><div class="v">25.4<span class="u">ft³</span></div><div class="l">Cargo</div></div><div><div class="v">3,500<span class="u">lb</span></div><div class="l">Tow</div></div></div></div>
+        <div class="btile b4"><div class="bstrip"><div><div class="v" style="font-size:16px;">8yr/120k mi</div><div class="l">Battery Warranty</div></div><div><div class="v" style="font-size:16px;">4yr/50k mi</div><div class="l">Vehicle</div></div><div><div class="v" style="font-size:16px;">1yr/12k mi</div><div class="l">Roadside</div></div></div></div>
+      </div>
+    </div>
+
+    <div class="ev-page" id="ev-page-solis">
+      <span class="ev-back-v1" onclick="showEvGrid()">‹ All EVs</span>
+      <div class="masthead"><div><h1>Solis Meridian</h1><p class="sub">2026 · Standard Range RWD · Fictional spec sheet</p></div></div>
+      <div class="bento-v1">
+        <div class="btile bh"><div class="bhero-name">Solis<br>Meridian</div><div><div class="bhero-trim">Standard Range · Rear-Wheel Drive</div><div class="bhero-price">$38,400</div></div></div>
+        <div class="btile b1"><div class="v">290<span class="u">mi</span></div><div class="l">Range</div></div>
+        <div class="btile b1"><div class="v">5.9<span class="u">sec</span></div><div class="l">0–60 mph</div></div>
+        <div class="btile b1"><div class="v">130<span class="u">mph</span></div><div class="l">Top Speed</div></div>
+        <div class="btile b1"><div class="v">68<span class="u">kWh</span></div><div class="l">Battery</div></div>
+        <div class="btile b1"><div class="v">26<span class="u">min</span></div><div class="l">Fast Charge</div></div>
+        <div class="btile b2"><div class="bwide"><div><div class="v">225<span class="u">hp</span></div><div class="l">Output</div></div><div><div class="v">240<span class="u">lb-ft</span></div><div class="l">Torque</div></div></div></div>
+        <div class="btile b1"><div class="v">4.1<span class="u">mi/kWh</span></div><div class="l">Efficiency</div></div>
+        <div class="btile b1"><div class="v" style="font-size:18px;">Single Motor</div><div class="l">Drivetrain</div></div>
+        <div class="btile b3"><div class="bstrip"><div><div class="v">5</div><div class="l">Seats</div></div><div><div class="v">15.8<span class="u">ft³</span></div><div class="l">Cargo</div></div><div><div class="v">1,500<span class="u">lb</span></div><div class="l">Tow</div></div></div></div>
+        <div class="btile b4"><div class="bstrip"><div><div class="v" style="font-size:16px;">8yr/100k mi</div><div class="l">Battery Warranty</div></div><div><div class="v" style="font-size:16px;">4yr/50k mi</div><div class="l">Vehicle</div></div><div><div class="v" style="font-size:16px;">1yr/12k mi</div><div class="l">Roadside</div></div></div></div>
+      </div>
+    </div>
+
+    <div class="ev-page" id="ev-page-kestrel">
+      <span class="ev-back-v1" onclick="showEvGrid()">‹ All EVs</span>
+      <div class="masthead"><div><h1>Kestrel Ranger EV</h1><p class="sub">2026 · Extended Range AWD · Fictional spec sheet</p></div></div>
+      <div class="bento-v1">
+        <div class="btile bh"><div class="bhero-name">Kestrel<br>Ranger EV</div><div><div class="bhero-trim">Extended Range · Dual Motor AWD</div><div class="bhero-price">$64,900</div></div></div>
+        <div class="btile b1"><div class="v">310<span class="u">mi</span></div><div class="l">Range</div></div>
+        <div class="btile b1"><div class="v">5.2<span class="u">sec</span></div><div class="l">0–60 mph</div></div>
+        <div class="btile b1"><div class="v">112<span class="u">mph</span></div><div class="l">Top Speed</div></div>
+        <div class="btile b1"><div class="v">131<span class="u">kWh</span></div><div class="l">Battery</div></div>
+        <div class="btile b1"><div class="v">32<span class="u">min</span></div><div class="l">Fast Charge</div></div>
+        <div class="btile b2"><div class="bwide"><div><div class="v">600<span class="u">hp</span></div><div class="l">Output</div></div><div><div class="v">700<span class="u">lb-ft</span></div><div class="l">Torque</div></div></div></div>
+        <div class="btile b1"><div class="v">2.1<span class="u">mi/kWh</span></div><div class="l">Efficiency</div></div>
+        <div class="btile b1"><div class="v" style="font-size:18px;">Dual Motor</div><div class="l">Drivetrain</div></div>
+        <div class="btile b3"><div class="bstrip"><div><div class="v">5</div><div class="l">Seats</div></div><div><div class="v">54.0<span class="u">ft³</span></div><div class="l">Bed/Cargo</div></div><div><div class="v">9,800<span class="u">lb</span></div><div class="l">Tow</div></div></div></div>
+        <div class="btile b4"><div class="bstrip"><div><div class="v" style="font-size:16px;">8yr/120k mi</div><div class="l">Battery Warranty</div></div><div><div class="v" style="font-size:16px;">5yr/60k mi</div><div class="l">Vehicle</div></div><div><div class="v" style="font-size:16px;">2yr/25k mi</div><div class="l">Roadside</div></div></div></div>
+      </div>
+    </div>
+
+    <div class="ev-page" id="ev-page-nimbus">
+      <span class="ev-back-v1" onclick="showEvGrid()">‹ All EVs</span>
+      <div class="masthead"><div><h1>Nimbus Coupe SE</h1><p class="sub">2026 · Performance RWD · Fictional spec sheet</p></div></div>
+      <div class="bento-v1">
+        <div class="btile bh"><div class="bhero-name">Nimbus<br>Coupe SE</div><div><div class="bhero-trim">Performance · Rear-Wheel Drive</div><div class="bhero-price">$61,750</div></div></div>
+        <div class="btile b1"><div class="v">265<span class="u">mi</span></div><div class="l">Range</div></div>
+        <div class="btile b1"><div class="v">3.1<span class="u">sec</span></div><div class="l">0–60 mph</div></div>
+        <div class="btile b1"><div class="v">168<span class="u">mph</span></div><div class="l">Top Speed</div></div>
+        <div class="btile b1"><div class="v">82<span class="u">kWh</span></div><div class="l">Battery</div></div>
+        <div class="btile b1"><div class="v">15<span class="u">min</span></div><div class="l">Fast Charge</div></div>
+        <div class="btile b2"><div class="bwide"><div><div class="v">510<span class="u">hp</span></div><div class="l">Output</div></div><div><div class="v">470<span class="u">lb-ft</span></div><div class="l">Torque</div></div></div></div>
+        <div class="btile b1"><div class="v">2.9<span class="u">mi/kWh</span></div><div class="l">Efficiency</div></div>
+        <div class="btile b1"><div class="v" style="font-size:18px;">Single Motor</div><div class="l">Drivetrain</div></div>
+        <div class="btile b3"><div class="bstrip"><div><div class="v">4</div><div class="l">Seats</div></div><div><div class="v">9.2<span class="u">ft³</span></div><div class="l">Cargo</div></div><div><div class="v">N/A</div><div class="l">Tow</div></div></div></div>
+        <div class="btile b4"><div class="bstrip"><div><div class="v" style="font-size:16px;">8yr/100k mi</div><div class="l">Battery Warranty</div></div><div><div class="v" style="font-size:16px;">4yr/50k mi</div><div class="l">Vehicle</div></div><div><div class="v" style="font-size:16px;">1yr/12k mi</div><div class="l">Roadside</div></div></div></div>
+      </div>
+    </div>
+
+   </div>
+   <!-- /view-evs -->
+
+  </div>
+
+  <button class="chat-fab" onclick="toggleChat()" aria-label="Open assistant">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 L2 7 L12 12 L22 7 Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
+  </button>
+
+  <div class="chat-card" id="chatCard">
+    <div class="chat-head">
+      <span style="display:flex;align-items:center;gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 L2 7 L12 12 L22 7 Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
+        Assistant
+      </span>
+      <button class="chat-close" onclick="toggleChat()">✕</button>
+    </div>
+    <div class="chat-msgs">
+      <div class="msg a">Hi Jordan — spend is up to $2.35 this week, mostly from Tuesday's spike. Want a breakdown?</div>
+      <div class="msg u">What drove the Jul 1 spike?</div>
+      <div class="msg a">11 requests that day pushed 3.8K tokens through gpt-oss-120b — your highest single-day volume before Jul 3.</div>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" rows="1" placeholder="Ask about your usage..."></textarea>
+      <button class="chat-send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+    </div>
+  </div>
+
+<script>
+  function toggleChat(){
+    document.getElementById('chatCard').classList.toggle('open');
+  }
+  function showView(name){
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+    document.getElementById('view-' + name).classList.add('on');
+    document.getElementById('nav-activity').classList.toggle('on', name === 'activity');
+    document.getElementById('nav-evs').classList.toggle('on', name === 'evs');
+    if(name === 'evs') showEvGrid();
+  }
+  function showTab(name){
+    document.querySelectorAll('.subtab').forEach(t => t.classList.remove('on'));
+    document.getElementById('tab-' + name).classList.add('on');
+    document.querySelectorAll('.tab-pill').forEach(p => p.classList.remove('on'));
+    document.getElementById('pill-' + name).classList.add('on');
+  }
+  function showEvGrid(){
+    document.querySelectorAll('.ev-page').forEach(p => p.classList.remove('on'));
+    document.getElementById('ev-page-grid').classList.add('on');
+  }
+  function showEv(slug){
+    document.querySelectorAll('.ev-page').forEach(p => p.classList.remove('on'));
+    document.getElementById('ev-page-' + slug).classList.add('on');
+  }
+</script>
+</body>
+</html>
